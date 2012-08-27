@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Bootstrap, Login Page</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="/tbs/css/bootstrap.css" rel="stylesheet">
+    <style type="text/css">
+      body {
+        background-color: #888888;
+      }
+    </style>
+    <link href="/tbs/css/bootstrap-responsive.css" rel="stylesheet">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+  </head>
+<body>
+
+		<div class="modal" id="loginBox">
+			<div class="modal-header">
+				<h3>Login</h3>
+			</div>
+			<div class="modal-body">
+				<form id="loginForm" class="form-inline">
+					<input id="loginUname" name="loginUname" type="text" class="input-small" placeholder="User" autofocus="true">
+					<input id="loginPasswd" name="loginPasswd" type="password" class="input-small" placeholder="Password">
+					<label class="checkbox">
+						<input id="loginRember" type="checkbox"> Remember username
+					</label>
+				</form>
+				<div id="loginWait" class="alert fade in hide">
+					<strong>Please wait...</strong> Logging in...
+				</div>
+				<div id="loginError" class="alert alert-block alert-error fade in hide">
+					<strong>Error: </strong><span id="loginErrorMsg"></span>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button id="tryLogin" class="btn btn-primary">Sign in</button>
+			</div>		
+		</div>
+
+    <!-- Le javascript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="/assets/js/jquery.js"></script>
+    <script src="/tbs/js/bootstrap-alert.js"></script>
+    <script src="socket.io/socket.io.js"></script>
+	<script src="/assets/js/functions.js"></script>
+	<script>
+
+		var socket = io.connect('95.147.7.40', {secure: true});
+
+		socket.on('connect', function(){
+
+			// Close alert box on typing-in
+			$('#loginForm input').on('change keypress', function() {
+				$(".alert").hide();
+			});
+
+			$('#tryLogin').on('click', function() {
+				
+				if($('#loginUname').val() == '' || $('#loginPasswd').val() == '')  {
+					showError('U or P empty !!!');
+					return false;
+				}
+
+				// Remeber uname
+				if($('#loginRember').is(':checked')) {
+					setCookie('uname', $('#loginUname').val());
+				} else {
+					setCookie('uname', '');
+				}
+
+				socket.emit('tryLogin', $('#loginForm').serializeObject());
+
+			});
+
+			// Login events
+			socket.on('succesLogin', function(data){
+				window.location.href = data;
+			});
+			
+			socket.on('errorLogin', function(data){
+				showError(data);
+			});
+
+		});
+
+		// Get username from cookie
+		var uname = getCookie('uname');
+		if(typeof uname != 'undefined' && uname != '') {
+			$('#loginUname').val(uname);
+			$('#loginPasswd').focus();
+		}
+		
+		function showError(error) {
+			$("#loginErrorMsg").html(error);
+			$("#loginError").show();
+		}
+
+	</script>
+</body>
+</html>
