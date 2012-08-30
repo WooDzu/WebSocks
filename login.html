@@ -29,10 +29,11 @@
 			</div>
 			<div class="modal-body">
 				<form id="loginForm" class="form-inline">
+					<input id="loginAddress" name="loginAddress" type="text" class="input-small" placeholder="localhost" autofocus="true">
 					<input id="loginUname" name="loginUname" type="text" class="input-small" placeholder="User" autofocus="true">
 					<input id="loginPasswd" name="loginPasswd" type="password" class="input-small" placeholder="Password">
 					<label class="checkbox">
-						<input id="loginRember" type="checkbox"> Remember username
+						<input id="loginRember" type="checkbox"> Remember address and username
 					</label>
 				</form>
 				<div id="loginWait" class="alert fade in hide">
@@ -56,50 +57,72 @@
 	<script src="assets/js/functions.js"></script>
 	<script>
 
-		var socket = io.connect(SERVER_HTTP_HOST(), {secure: true});
+		var uaddr = getCookie('uaddress'),
+			uname = getCookie('uname'),
+			check = false;
 
-		socket.on('connect', function(){
+		// Set login address from cookie
+		if(typeof uaddr != 'undefined' && uaddr != '') {
+			$('#loginAddress').val(uaddr);
+			$('#loginUname').focus();
+			check = true;
+		}
 
-			// Close alert box on typing-in
-			$('#loginForm input').on('change keypress', function() {
-				$(".alert").hide();
-			});
-
-			$('#tryLogin').on('click', function() {
-				
-				if($('#loginUname').val() == '' || $('#loginPasswd').val() == '')  {
-					showError('U or P empty !!!');
-					return false;
-				}
-
-				// Remeber uname
-				if($('#loginRember').is(':checked')) {
-					setCookie('uname', $('#loginUname').val());
-				} else {
-					setCookie('uname', '');
-				}
-
-				socket.emit('tryLogin', $('#loginForm').serializeObject());
-
-			});
-
-			// Login events
-			socket.on('succesLogin', function(data){
-				window.location.href = 'index.html';
-			});
-			
-			socket.on('errorLogin', function(data){
-				showError(data);
-			});
-
-		});
-
-		// Get username from cookie
-		var uname = getCookie('uname');
+		// Set username from cookie
 		if(typeof uname != 'undefined' && uname != '') {
 			$('#loginUname').val(uname);
 			$('#loginPasswd').focus();
+			check = true;
 		}
+
+		if(check) $('#loginRember').prop('checked', true);
+
+
+		// Close alert box on typing-in
+		$('#loginForm input').on('change keypress', function() {
+			$(".alert").hide();
+		});
+
+		$('#tryLogin').on('click', function() {
+				
+			if($('#loginUname').val() == '' || $('#loginPasswd').val() == '')  {
+				showError('U or P empty !!!');
+				return false;
+			}
+
+			// Remeber uname
+			if($('#loginRember').is(':checked')) {
+				setCookie('uname', $('#loginUname').val());
+			} else {
+				setCookie('uname', '');
+			}
+
+			// Remeber uname
+			if($('#loginRember').is(':checked')) {
+				setCookie('uaddress', $('#loginAddress').val());
+			} else {
+				setCookie('uaddress', '');
+			}
+
+			// Socket.io
+			var socket = io.connect($('#loginAddress').val(), {secure: true});
+
+			socket.emit('tryLogin', $('#loginForm').serializeObject());
+
+			socket.on('connect', function(){
+
+				// Login events
+				socket.on('succesLogin', function(data){
+					window.location.href = 'index.html';
+				});
+
+				socket.on('errorLogin', function(data){
+					showError(data);
+				});
+
+			});
+		
+		});
 		
 		function showError(error) {
 			$("#loginErrorMsg").html(error);
