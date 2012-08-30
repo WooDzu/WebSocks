@@ -146,7 +146,7 @@
     <script src="assets/js/ui.js"></script>
 	<script>
 	
-		var socket = io.connect('95.147.7.40', {secure: true});
+		var socket = io.connect(SERVER_HTTP_HOST(), {secure: true});
 		
 		socket.on('connect', function(){
 			
